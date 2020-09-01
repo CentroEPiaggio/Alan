@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<robot name="panda" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="robot_name" default="panda"/>
+
+  <xacro:arg name="prefix" default="summit_xl_"/>
+  <!-- Flag to select the high or low quality model -->
+  <xacro:property name="hq" value="true" />
+  <xacro:arg name="gpu" default="false"/>
+
+  <!-- SUMMIT XLS -->
+  <xacro:include filename="$(find summit_xl_description)/urdf/bases/summit_xls_base.urdf.xacro" />
+  <xacro:include filename="$(find robotnik_sensors)/urdf/all_sensors.urdf.xacro" />
+  
+  <xacro:summit_xls_base prefix="$(arg prefix)" publish_bf="true" hq="${hq}" />
+
+  <xacro:include filename="$(find summit_xl_description)/urdf/wheels/omni_wheel.urdf.xacro" />
+  <xacro:property name="wheel_offset_x" value="0.2225" /> 
+	<xacro:property name="wheel_offset_y" value="0.2045" />
+  <xacro:property name="wheel_offset_z" value="0.0" />
+
+  <xacro:property name="front_laser_offset_x" value="0.2865"/>
+	<xacro:property name="front_laser_offset_y" value="-0.20894"/>
+	<xacro:property name="front_laser_offset_z" value="0.2973"/>
+
+	<xacro:property name="rear_laser_offset_x" value="-0.2865"/>
+	<xacro:property name="rear_laser_offset_y" value="0.20894"/>
+	<xacro:property name="rear_laser_offset_z" value="0.2973"/>
+
+	<xacro:property name="front_ptz_camera_offset_x" value="0.308"/>
+	<xacro:property name="front_ptz_camera_offset_y" value="0.141"/>
+	<xacro:property name="front_ptz_camera_offset_z" value="0.195"/>
+
+	<xacro:property name="rear_ptz_camera_offset_x" value="-0.308"/>
+	<xacro:property name="rear_ptz_camera_offset_y" value="-0.141"/>
+	<xacro:property name="rear_ptz_camera_offset_z" value="0.195"/>
+
+	<xacro:property name="imu_offset_x" value="0.127"/>
+	<xacro:property name="imu_offset_y" value="-0.129"/>
+	<xacro:property name="imu_offset_z" value="0.212"/>
+
+	<xacro:property name="front_rgbd_camera_offset_x" value="0.35850"/>
+	<xacro:property name="front_rgbd_camera_offset_y" value="0.0"/>
+	<xacro:property name="front_rgbd_camera_offset_z" value="0.25062"/>
+
+	<xacro:property name="gps_offset_x" value="-0.365"/>
+	<xacro:property name="gps_offset_y" value="-0.167"/>
+	<xacro:property name="gps_offset_z" value="0.302"/>
+
+  <xacro:property name="PI" value="3.1415926535897931"/>
+
+  <xacro:omni_steering prefix="$(arg prefix)" publish_tf="true"/>
+
+  <xacro:omni_wheel prefix="$(arg prefix)front_right" parent="$(arg prefix)base_link" reflect="false" hq="${hq}">
+    <origin xyz="${wheel_offset_x} -${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 0"/>
+  </xacro:omni_wheel>
+
+  <xacro:omni_wheel prefix="$(arg prefix)front_left" parent="$(arg prefix)base_link" reflect="true" hq="${hq}">
+    <origin xyz="${wheel_offset_x} ${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 0"/>
+  </xacro:omni_wheel>
+
+  <xacro:omni_wheel prefix="$(arg prefix)back_left" parent="$(arg prefix)base_link" reflect="true" hq="${hq}">
+    <origin xyz="-${wheel_offset_x} ${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 0"/>
+  </xacro:omni_wheel>
+
+  <xacro:omni_wheel prefix="$(arg prefix)back_right" parent="$(arg prefix)base_link" reflect="false" hq="${hq}">
+    <origin xyz="-${wheel_offset_x} -${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 0"/>
+  </xacro:omni_wheel>
+
+
+  <!-- PANDA -->
+  <xacro:include filename="$(find franka_description)/robots/panda_arm.xacro"/>
+  <xacro:include filename="$(find franka_description)/robots/hand.xacro"/>
+
+  <!-- for simulation -->
+  <xacro:include filename="$(find franka_description)/robots/panda.gazebo.xacro"/>
+  <xacro:include filename="$(find franka_description)/robots/panda.control.xacro"/>
+  <!-- end for simulation -->
+
+<!-- connected_to="summit_xl_base_link" -->
+  <xacro:panda_arm xyz="0 0 0.38212"
+                   rpy="0 0 0"
+                   connected_to="summit_xl_base_link"
+                   arm_id="$(arg robot_name)"/>
+  <xacro:hand ns="panda" rpy="0 0 ${-pi/4}" connected_to="panda_link8" safety_distance="0.03"/>
+
+  <!-- for simulation -->
+  <xacro:panda_gazebo arm_id="panda"/>
+  <xacro:panda_control arm_id="panda" load_hand="true" />
+  <!-- end for simulation -->
+
+  <!-- world to summit joint -->
+  <joint name="summit_to_world" type="fixed">
+    <child link="world" />
+    <parent link="summit_xl_base_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+</robot>
