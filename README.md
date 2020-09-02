@@ -1,6 +1,6 @@
-# Centaurus
+# Alan
 
-*Centaurus* is a mobile manipulator consisting of a
+*Alan* is a mobile manipulator consisting of a
 [Summit XL Steel](https://robotnik.eu/products/mobile-robots/summit-xl-steel-en/) base and
 a [Franka Panda](https://www.franka.de/) arm.
 
@@ -28,7 +28,7 @@ git clone https://github.com/RobotnikAutomation/robotnik_msgs.git
 git clone https://github.com/RobotnikAutomation/robotnik_sensors.git
 git clone https://github.com/RobotnikAutomation/summit_xl_sim.git
 
-git clone https://github.com/ABAG-ControlloRobot/Centaurus.git
+git clone https://github.com/CentroEPiaggio/Alan.git
 
 cd ..
 sudo apt-get install libboost-filesystem-dev
@@ -37,9 +37,9 @@ rosdep install --from-paths src --ignore-src -y --skip-keys libfranka
 catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/opt/ros/kinetic/lib/libfranka/
 ```
 
-## Running Centaurus on Gazebo
+## Running Alan on Gazebo
 
 ```
 source devel/setup.bash
-roslaunch centaurus sim.launch
+roslaunch alan sim.launch
 ```
