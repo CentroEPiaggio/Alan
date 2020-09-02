@@ -1,6 +1,6 @@
 # Alan
 
-*Alan* is a mobile manipulator consisting of a
+*Alan* is a mobile manipulator composted of a
 [Summit XL Steel](https://robotnik.eu/products/mobile-robots/summit-xl-steel-en/) base and
 a [Franka Panda](https://www.franka.de/) arm.
 
