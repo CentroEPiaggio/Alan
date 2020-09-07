@@ -44,3 +44,4 @@ source devel/setup.bash
 roslaunch alan sim.launch
 ```
 <img src="images/screenshot.png">
+<img src="images/screenshot_rviz.png">
