@@ -43,3 +43,4 @@ catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/opt/ros/kinetic/lib/li
 source devel/setup.bash
 roslaunch alan sim.launch
 ```
+<img src="images/screenshot.png">
