@@ -84,7 +84,7 @@ def get_plan(move_group, scale=1):
   radius = 0.1
   center_y = wpose.position.y
   center_z = wpose.position.z - radius
-  thetas = np.linspace(0, 2*np.pi, 50)
+  thetas = np.linspace(0, 10*np.pi, 250)
 
   for theta in thetas:
     y = radius * math.cos(theta) + center_y
@@ -143,7 +143,7 @@ def main():
   move_group.execute(plan, wait=False)
 
 
-  base_ref_position = np.array([2, 2])
+  base_ref_position = np.array([0, 0])
   while not rospy.is_shutdown():
     base_msg = base_control(base_ref_position)
     

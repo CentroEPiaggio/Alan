@@ -68,9 +68,40 @@ def main():
                                  tcp_nodelay=True)
   rospy.Subscriber('/base_position_controller/goal_reached',
                    std_msgs.msg.Bool, base_goal_reached_callback)
-
+ #--------------------------------------------------------------
+ # Generating the reference  joint goal for Franka arm
+  #moveit_commander.roscpp_initialize(sys.argv)
   group_name = "panda_arm"
   move_group = moveit_commander.MoveGroupCommander(group_name)
+
+  #joint_goal = move_group.get_current_joint_values()
+  #joint_goal[0] = 0
+  #joint_goal[1] = +np.pi/3
+  #joint_goal[2] = 0
+  #joint_goal[3] = -np.pi/2
+  #joint_goal[4] = -np.pi/3
+  #joint_goal[5] = np.pi/3
+  #joint_goal[6] = 0
+
+  #move_group.go(joint_goal, wait=True)
+  #move_group.stop()
+  #--------------------------------------------------------------
+  # Generating a pose goal for Franka arm
+  pose_goal = geometry_msgs.msg.Pose()
+  pose_goal.orientation.w = 1.0
+  pose_goal.position.x = 0.3
+  pose_goal.position.y = 0.2
+  pose_goal.position.z = 0.6
+
+  #move_group.set_pose_target(pose_goal)
+  #(plan,fraction) = move_group.compute_cartesian_path(wait=True)
+  #move_group.stop
+  #move_group.clear_pose_targets()
+  #move_group.execute(plan, wait=True)
+
+  #--------------------------------------------------------------
+  #group_name = "panda_arm"
+  #move_group = moveit_commander.MoveGroupCommander(group_name)
   
 
   base_ref_msg = get_random_base_pose()
