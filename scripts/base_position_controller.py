@@ -11,9 +11,9 @@ from tf.transformations import euler_from_quaternion
 current_pose = None
 reference_pose = None
 
-max_vel = 1
-max_ang_vel = 0.5
-gain_position = 1
+max_vel = 3
+max_ang_vel = 1
+gain_position = 5
 gain_orientation = 1
 
 
