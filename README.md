@@ -45,3 +45,21 @@ roslaunch alan sim.launch
 ```
 <img src="images/screenshot.png">
 <img src="images/screenshot_rviz.png">
+
+## Example Tasks
+
+### 1 - Grasping Task
+Launch Gazebo by running:
+```
+source devel/setup.bash
+roslaunch alan sim.launch
+```
+
+In a separate terminal run:
+```
+roslaunch alan ee_pose_control.launch ee_x:=1.0 ee_y:=1.0 ee_z:=0.7
+```
+
+where [`ee_x`, `ee_y`, `ee_z`] is the desired end-effector position.
+
+<img src="images/ee_pose_task.png" >
