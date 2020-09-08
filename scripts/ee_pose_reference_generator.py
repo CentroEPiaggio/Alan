@@ -132,7 +132,7 @@ def compute_base_des_pose(des_position):
   
   base_des_pose.x = position[0]
   base_des_pose.y = position[1]
-  base_des_pose.theta = math.atan2(direction[1], direction[0]) + np.pi/2
+  base_des_pose.theta = math.atan2(direction[1], direction[0])
 
   return base_des_pose
 
