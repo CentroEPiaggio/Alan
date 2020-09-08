@@ -1,0 +1,14 @@
+<launch>
+  <arg name="ee_x" />
+  <arg name="ee_y" />
+  <arg name="ee_z" />
+
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/alan.urdf.xacro" />
+
+  <node name="base_position_controller"
+        pkg="alan" type="base_position_controller.py" output="screen" />
+  
+  <node name="ee_pose_reference_generator"
+        pkg="alan" type="ee_pose_reference_generator.py" output="screen"
+        args="$(arg ee_x) $(arg ee_y) $(arg ee_z)" />
+</launch>
