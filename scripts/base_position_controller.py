@@ -98,6 +98,7 @@ def is_goal_reached(current, reference):
 
 
 def main():
+  global reference_pose
   rospy.init_node('base_position_controller')
 
   base_cmd_pub = rospy.Publisher('/robotnik_base_control/cmd_vel',
@@ -112,9 +113,10 @@ def main():
                    geometry_msgs.msg.Pose2D, reference_callback)
   
   rospy.loginfo("Waiting initial state")
-  while not rospy.is_shutdown() and \
-        (current_pose is None or reference_pose is None):
+  while not rospy.is_shutdown() and current_pose is None:
     rospy.sleep(1)
+
+  reference_pose = current_pose
 
   rospy.loginfo("Commading...")
 
