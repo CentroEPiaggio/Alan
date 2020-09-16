@@ -69,7 +69,7 @@
 
   <!-- PANDA -->
   <xacro:include filename="$(find franka_description)/robots/panda_arm.xacro"/>
-  <xacro:include filename="$(find franka_description)/robots/hand.xacro"/>
+  <xacro:include filename="$(find alan)/robots/hand.xacro"/>
 
   <!-- for simulation -->
   <xacro:include filename="$(find franka_description)/robots/panda.gazebo.xacro"/>
