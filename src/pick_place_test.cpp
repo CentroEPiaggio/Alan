@@ -198,7 +198,7 @@ void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& pla
 
   // Add the first table where the cube will originally be kept.
   collision_objects[0].id = "table1";
-  collision_objects[0].header.frame_id = "panda_link0";
+  collision_objects[0].header.frame_id = "summit_xl_base_footprint";
 
   /* Define the primitive and its dimensions. */
   collision_objects[0].primitives.resize(1);
@@ -206,19 +206,19 @@ void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& pla
   collision_objects[0].primitives[0].dimensions.resize(3);
   collision_objects[0].primitives[0].dimensions[0] = 0.2;
   collision_objects[0].primitives[0].dimensions[1] = 0.4;
-  collision_objects[0].primitives[0].dimensions[2] = 0.4;
+  collision_objects[0].primitives[0].dimensions[2] = 0.9;
 
   /* Define the pose of the table. */
   collision_objects[0].primitive_poses.resize(1);
   collision_objects[0].primitive_poses[0].position.x = 0.5;
   collision_objects[0].primitive_poses[0].position.y = 0;
-  collision_objects[0].primitive_poses[0].position.z = 0.2;
+  collision_objects[0].primitive_poses[0].position.z = 0.45;
 
   collision_objects[0].operation = collision_objects[0].ADD;
 
   // Add the second table where we will be placing the cube.
   collision_objects[1].id = "table2";
-  collision_objects[1].header.frame_id = "panda_link0";
+  collision_objects[1].header.frame_id = "summit_xl_base_footprint";
 
   /* Define the primitive and its dimensions. */
   collision_objects[1].primitives.resize(1);
@@ -226,18 +226,18 @@ void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& pla
   collision_objects[1].primitives[0].dimensions.resize(3);
   collision_objects[1].primitives[0].dimensions[0] = 0.4;
   collision_objects[1].primitives[0].dimensions[1] = 0.2;
-  collision_objects[1].primitives[0].dimensions[2] = 0.4;
+  collision_objects[1].primitives[0].dimensions[2] = 0.9;
 
   /* Define the pose of the table. */
   collision_objects[1].primitive_poses.resize(1);
   collision_objects[1].primitive_poses[0].position.x = 0;
   collision_objects[1].primitive_poses[0].position.y = 0.5;
-  collision_objects[1].primitive_poses[0].position.z = 0.2;
+  collision_objects[1].primitive_poses[0].position.z = 0.45;
 
   collision_objects[1].operation = collision_objects[1].ADD;
 
   // Define the object that we will be manipulating
-  collision_objects[2].header.frame_id = "panda_link0";
+  collision_objects[2].header.frame_id = "summit_xl_base_footprint";
   collision_objects[2].id = "object";
 
   /* Define the primitive and its dimensions. */
@@ -246,13 +246,13 @@ void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& pla
   collision_objects[2].primitives[0].dimensions.resize(3);
   collision_objects[2].primitives[0].dimensions[0] = 0.02;
   collision_objects[2].primitives[0].dimensions[1] = 0.02;
-  collision_objects[2].primitives[0].dimensions[2] = 2.0;
+  collision_objects[2].primitives[0].dimensions[2] = 0.2;
 
   /* Define the pose of the object. */
   collision_objects[2].primitive_poses.resize(1);
   collision_objects[2].primitive_poses[0].position.x = 0.5;
   collision_objects[2].primitive_poses[0].position.y = 0;
-  collision_objects[2].primitive_poses[0].position.z = 0.5;
+  collision_objects[2].primitive_poses[0].position.z = 1.0;
 
   collision_objects[2].operation = collision_objects[2].ADD;
 
