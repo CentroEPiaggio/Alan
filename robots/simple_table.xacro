@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="simple_table">
+    <link name="object_base_link">
+    </link>
+
+    <joint name="object_base_joint" type="fixed">
+        <parent link="object_base_link"/>
+        <child link="object_link"/>
+        <axis xyz="0 0 1" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="object_link">
+        <inertial>
+            <origin xyz="0 0 0" />
+            <mass value="1000.0" />
+            <inertia ixx="100.0" ixy="0.0" ixz="0.0" iyy="100.0" iyz="0.0" izz="100.0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <box size="0.2 0.4 0.9" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <box size="0.2 0.4 0.9" />
+            </geometry>
+        </collision>
+    </link>
+
+    <gazebo reference="object_base_link">
+        <gravity>1</gravity>
+    </gazebo>
+
+    <gazebo reference="object_link">
+        <mu1>1</mu1>
+        <mu2>1</mu2>
+        <material>Gazebo/Green</material>
+    </gazebo>
+</robot>

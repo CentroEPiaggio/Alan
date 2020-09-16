@@ -1,9 +1,16 @@
 <launch>
+    <param name="table_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/simple_table.xacro"/>
+    <node name="spawn_start_table" pkg="gazebo_ros" type="spawn_model"
+          args="-param table_description -urdf -model start_table -x 0.5 -y 0.0 -z 0.45"/>
+    <node name="spawn_end_table" pkg="gazebo_ros" type="spawn_model"
+          args="-param table_description -urdf -model end_table -x 0.0 -y 0.5 -z 0.45 -Y 1.570796327"/>
+
     <param name="box_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/box.xacro"/>
     <node name="box_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" args="robot_description:=box_description" />
 
     <node name="spawn_object" pkg="gazebo_ros" type="spawn_model"
           args="-param box_description -urdf -model object -x 0.5 -y 0.0 -z 1.0"/>
+
 
     <!-- launch node -->
     <!--<node pkg="panda_simulation" type="box_publisher_node" name="box_publisher_node" />-->
