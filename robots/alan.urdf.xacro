@@ -73,7 +73,7 @@
 
   <!-- for simulation -->
   <xacro:include filename="$(find franka_description)/robots/panda.gazebo.xacro"/>
-  <xacro:include filename="$(find franka_description)/robots/panda.control.xacro"/>
+  <xacro:include filename="$(find alan)/robots/panda.control.xacro"/>
   <!-- end for simulation -->
 
 <!-- connected_to="summit_xl_base_link" -->
