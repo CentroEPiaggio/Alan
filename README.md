@@ -28,6 +28,9 @@ git clone https://github.com/RobotnikAutomation/robotnik_msgs.git
 git clone https://github.com/RobotnikAutomation/robotnik_sensors.git
 git clone https://github.com/RobotnikAutomation/summit_xl_sim.git
 
+git clone https://github.com/JenniferBuehler/gazebo-pkgs.git
+git clone https://github.com/JenniferBuehler/general-message-pkgs.git
+
 git clone https://github.com/CentroEPiaggio/Alan.git
 
 cd ..
