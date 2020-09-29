@@ -1,0 +1,11 @@
+<launch>
+    <param name="table_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/simple_table.xacro"/>
+    <node name="spawn_start_table" pkg="gazebo_ros" type="spawn_model"
+          args="-param table_description -urdf -model start_table -x 2 -y 2 -z 0.45 -Y 0.785"/>
+
+    <param name="box_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/box.xacro"/>
+    <node name="box_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" args="robot_description:=box_description" />
+
+    <node name="spawn_object" pkg="gazebo_ros" type="spawn_model"
+          args="-param box_description -urdf -model object -x 2 -y 2 -z 1.0 -Y 0.785"/>
+</launch>

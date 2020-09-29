@@ -24,12 +24,21 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   ${Boost_INCLUDE_DIR}
+  lib/
 )
 
 add_executable(pick_place_test
   src/pick_place_test.cpp
 )
 target_link_libraries(pick_place_test
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(move_pick_place
+  src/move_pick_place.cpp
+)
+target_link_libraries(move_pick_place
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
