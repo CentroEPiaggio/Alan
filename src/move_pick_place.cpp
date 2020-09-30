@@ -16,12 +16,14 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_datatypes.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 #include "boost/sml.hpp"
 
 constexpr double ARM_LENGTH = 1.0;
 
 double is_base_goal_reached = false;
+bool is_object_picked = false;
 
 
 geometry_msgs::Pose2D
@@ -74,9 +76,16 @@ constexpr auto move_base_to_target = [](references& ref, target& target) {
 constexpr auto do_pick_place = [](references& ref, target& target,
                                   moveit::planning_interface::MoveGroupInterface& group) {
   ROS_INFO("calling do_pick_place");
-  pick(group, target.arm_ee_pick, 0.25);
-  ros::WallDuration(1.0).sleep();
+  ROS_INFO("calling pick");
+  pick(group, target.arm_ee_pick, 0.025);
+  ROS_INFO("calling place");
   place(group, target.arm_ee_place);
+};
+
+constexpr auto arm_to_ready = [](references& ref, target& target,
+                                  moveit::planning_interface::MoveGroupInterface& group) {
+  group.setNamedTarget("ready");
+  group.move();
 };
 
 // State Machine
@@ -87,8 +96,8 @@ struct state_machine {
     return make_transition_table(
       *"waiting_go"_s + event<start>                  / move_base_to_home   = "robot_ready"_s,
       "robot_ready"_s + event<base_goal_reached>      / move_base_to_target = "base_approaching"_s,
-      "base_approaching"_s + event<base_goal_reached> / do_pick_place       = "grasping"_s,
-      "grasping"_s + event<pick_place_done>           / move_base_to_home   = "base_going_home"_s,
+      "base_approaching"_s + event<base_goal_reached> / do_pick_place       = "base_going_home"_s,
+      "base_going_home"_s + on_entry<_>               / ( move_base_to_home, arm_to_ready ),
       "base_going_home"_s + event<base_goal_reached>                        = "waiting_go"_s
     );
   }
@@ -100,7 +109,7 @@ void base_goal_reached_callback(const std_msgs::Bool::ConstPtr& msg,
 int main(int argc, char** argv) {
   ros::init(argc, argv, "move_pick_place");
   ros::NodeHandle nh;
-  ros::AsyncSpinner spinner(1);
+  ros::AsyncSpinner spinner(2);
   spinner.start();
 
   if (argc < 4) {
@@ -117,15 +126,20 @@ int main(int argc, char** argv) {
 
   target sm_target;
   sm_target.base = compute_base_des_pose(des_position);
-  tf2::Quaternion orientation;
-  orientation.setRPY(-M_PI / 2, -M_PI / 4, -M_PI / 2);
-  sm_target.arm_ee_pick.orientation = tf2::toMsg(orientation);
-  sm_target.arm_ee_pick.position.x = 2.0;
-  sm_target.arm_ee_pick.position.y = 2.0;
+  tf2::Quaternion pick_orientation;
+  pick_orientation.setRPY(-M_PI / 2, -M_PI / 4, -M_PI / 2);
+  sm_target.arm_ee_pick.orientation = tf2::toMsg(pick_orientation);
+  sm_target.arm_ee_pick.position.x = 0.405;
+  sm_target.arm_ee_pick.position.y = 0.0;
   sm_target.arm_ee_pick.position.z = 1.0;
 
-  // sm_target.arm_ee_place;
-  
+  tf2::Quaternion place_orientation;
+  place_orientation.setRPY(M_PI, M_PI / 2, 0);
+  sm_target.arm_ee_place.orientation = tf2::toMsg(place_orientation);
+  sm_target.arm_ee_place.position.x = -0.33;
+  sm_target.arm_ee_place.position.y = 0.20;
+  sm_target.arm_ee_place.position.z = 0.55;
+
   references sm_references;
 
   ros::WallDuration(1.0).sleep();
@@ -173,7 +187,7 @@ compute_base_des_pose(const Eigen::Vector3d& des_position) {
   double pos_2d_norm = pos_2d.norm();
 
   Vector2d direction = pos_2d / pos_2d_norm;
-  Vector2d position = direction * (pos_2d_norm - 2.0*ARM_LENGTH/3.0);
+  Vector2d position = direction * (pos_2d_norm - ARM_LENGTH/2.0);
   
   geometry_msgs::Pose2D base_des_pose;
   base_des_pose.x = position[0];
@@ -227,18 +241,18 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group,
   std::vector<moveit_msgs::Grasp> grasps;
   grasps.resize(1);
 
-  grasps[0].grasp_pose.header.frame_id = "summit_xl_odom";
+  grasps[0].grasp_pose.header.frame_id = "summit_xl_base_footprint";
   grasps[0].grasp_pose.pose = grasp_pose;
 
   /* Defined with respect to frame_id */
-  grasps[0].pre_grasp_approach.direction.header.frame_id = "summit_xl_odom";
+  grasps[0].pre_grasp_approach.direction.header.frame_id = "summit_xl_base_footprint";
   /* Direction is set as positive x axis */
   grasps[0].pre_grasp_approach.direction.vector.x = 1.0;
   grasps[0].pre_grasp_approach.min_distance = 0.095;
   grasps[0].pre_grasp_approach.desired_distance = 0.115;
 
   /* Defined with respect to frame_id */
-  grasps[0].post_grasp_retreat.direction.header.frame_id = "summit_xl_odom";
+  grasps[0].post_grasp_retreat.direction.header.frame_id = "summit_xl_base_footprint";
   /* Direction is set as positive z axis */
   grasps[0].post_grasp_retreat.direction.vector.z = 1.0;
   grasps[0].post_grasp_retreat.min_distance = 0.1;
@@ -249,6 +263,7 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group,
   grasps[0].grasp_posture = close_gripper(object_dimension);
 
   move_group.setSupportSurfaceName("table1");
+  is_object_picked = true;
   move_group.pick("object", grasps);
 }
 
@@ -257,7 +272,7 @@ void place(moveit::planning_interface::MoveGroupInterface& group,
   std::vector<moveit_msgs::PlaceLocation> place_location;
   place_location.resize(1);  
 
-  place_location[0].place_pose.header.frame_id = "panda_link0";
+  place_location[0].place_pose.header.frame_id = "summit_xl_base_footprint";
   place_location[0].place_pose.pose = place_pose;
 
   /* Defined with respect to frame_id */
@@ -270,7 +285,7 @@ void place(moveit::planning_interface::MoveGroupInterface& group,
   /* Defined with respect to frame_id */
   place_location[0].post_place_retreat.direction.header.frame_id = "summit_xl_base_footprint";
   /* Direction is set as negative y axis */
-  place_location[0].post_place_retreat.direction.vector.y = -1.0;
+  place_location[0].post_place_retreat.direction.vector.z = 1.0;
   place_location[0].post_place_retreat.min_distance = 0.1;
   place_location[0].post_place_retreat.desired_distance = 0.25;
 
@@ -284,100 +299,60 @@ void place(moveit::planning_interface::MoveGroupInterface& group,
 void update_collision_objects(
     moveit::planning_interface::PlanningSceneInterface& planning_scene_interface,
     const geometry_msgs::Pose& base_pose) {
-  static geometry_msgs::Pose table1_pose_fixed;
-  static double table1_yaw_fixed  = M_PI/4;
-  tf2::Quaternion table1_orientation_fixed;
-  table1_orientation_fixed.setRPY(0, 0, table1_yaw_fixed);
-  table1_pose_fixed.orientation = tf2::toMsg(table1_orientation_fixed);
-  table1_pose_fixed.position.x = 2;
-  table1_pose_fixed.position.y = 2;
-  table1_pose_fixed.position.z = 0.45;
+  geometry_msgs::Pose table_pose;
+  tf2::Quaternion table_orientation;
+  table_orientation.setRPY(0, 0, M_PI/4);
+  table_pose.orientation = tf2::toMsg(table_orientation);
+  table_pose.position.x = 2;
+  table_pose.position.y = 2;
+  table_pose.position.z = 0.45;
 
-  geometry_msgs::Point position_err_fixed;
-  position_err_fixed.x = table1_pose_fixed.position.x - base_pose.position.x;
-  position_err_fixed.y = table1_pose_fixed.position.y - base_pose.position.y;
-  position_err_fixed.z = table1_pose_fixed.position.z - base_pose.position.z;
-
-  double yaw_err = table1_yaw_fixed - tf::getYaw(base_pose.orientation);
-  double cos_th = std::cos(tf::getYaw(base_pose.orientation));
-  double sin_th = std::sin(tf::getYaw(base_pose.orientation));
-  double table1_body_x = cos_th * position_err_fixed.x  + sin_th * position_err_fixed.y;
-  double table1_body_y = -sin_th * position_err_fixed.x + cos_th * position_err_fixed.y;
-
+  geometry_msgs::Pose object_pose;
+  tf2::Quaternion object_orientation;
+  object_orientation.setRPY(0, 0, M_PI/4);
+  object_pose.orientation = tf2::toMsg(object_orientation);
+  object_pose.position.x = 2;
+  object_pose.position.y = 2;
+  object_pose.position.z = 1;
   
-  /*
-  table1_pos_fixed = [2, 2, 0.45]
-  table1_quat_fixed = [0, 0, 0, 1]
-  */
+  Eigen::Affine3d tf_fixed_base;
+  Eigen::Affine3d tf_fixed_table;
+  Eigen::Affine3d tf_fixed_object;
+  tf2::fromMsg(base_pose, tf_fixed_base);
+  tf2::fromMsg(table_pose, tf_fixed_table);
+  tf2::fromMsg(object_pose, tf_fixed_object);
 
-  /*
-  R_fixed_body = quat_to_rot(base_odom.orientation)
-  base_fixed = base_odom.position
-  */
+  Eigen::Affine3d tf_base_table = tf_fixed_base.inverse() * tf_fixed_table;
+  Eigen::Affine3d tf_base_object = tf_fixed_base.inverse() * tf_fixed_object;
+  geometry_msgs::Pose table_body_pose = tf2::toMsg(tf_base_table);
+  geometry_msgs::Pose object_body_pose = tf2::toMsg(tf_base_object);
 
-  /*
-  ?? table1_position_body, table1_ori_body
+  if (!is_object_picked) {
+    std::vector<moveit_msgs::CollisionObject> collision_objects;
+    collision_objects.resize(2);
 
-  err_position_fixed = table1_pos_fixed - base_fixed
-  table1_position_body = (R_fixed_body)^T * err_position_fixed
-  table1_quat_body = fn(table1_quat_fixed, base_quat_fixed)
-  table1_quat_fixed = base_quat_fixed * table_quat_body
-  table_quat_boyd = inv(base_quat_fixed) * table1_quat_fixed
+    // Add the first table where the cube will originally be kept.
+    collision_objects[0].id = "table1";
+    collision_objects[0].header.frame_id = "summit_xl_base_footprint";
 
-  R_fixed_body
-  table1_pos_body = R_fixed_body^T * table1_pos_fixed
-  table_quat_body = 
+    /* Define the pose of the table. */
+    collision_objects[0].primitive_poses.resize(1);
+    collision_objects[0].primitive_poses[0] = table_body_pose;
+    collision_objects[0].operation = collision_objects[0].MOVE;
 
-  */
+    // Define the object that we will be manipulating
+    collision_objects[1].header.frame_id = "summit_xl_base_footprint";
+    collision_objects[1].id = "object";
 
-  // Create vector to hold 3 collision objects.
-  std::vector<moveit_msgs::CollisionObject> collision_objects;
-  collision_objects.resize(2);
+    /* Define the pose of the object. */
+    collision_objects[1].primitive_poses.resize(1);
+    collision_objects[1].primitive_poses[0] = object_body_pose;
 
-  // Add the first table where the cube will originally be kept.
-  collision_objects[0].id = "table1";
-  collision_objects[0].header.frame_id = "summit_xl_base_footprint";
+    collision_objects[1].operation = collision_objects[1].MOVE;
 
-  /* Define the primitive and its dimensions. */
-  collision_objects[0].primitives.resize(1);
-  collision_objects[0].primitives[0].type = collision_objects[0].primitives[0].BOX;
-  collision_objects[0].primitives[0].dimensions.resize(3);
-  collision_objects[0].primitives[0].dimensions[0] = 0.2;
-  collision_objects[0].primitives[0].dimensions[1] = 0.4;
-  collision_objects[0].primitives[0].dimensions[2] = 0.9;
+    planning_scene_interface.applyCollisionObjects(collision_objects);
+  }
 
-  /* Define the pose of the table. */
-  collision_objects[0].primitive_poses.resize(1);
-  collision_objects[0].primitive_poses[0].position.x = table1_body_x;
-  collision_objects[0].primitive_poses[0].position.y = table1_body_y;
-  collision_objects[0].primitive_poses[0].position.z = table1_pose_fixed.position.z;
-  tf2::Quaternion table1_orientation_body;
-  table1_orientation_body.setEulerZYX(yaw_err, 0, 0);
-  collision_objects[0].primitive_poses[0].orientation = tf2::toMsg(table1_orientation_body);
-
-  collision_objects[0].operation = collision_objects[0].MOVE;
-
-  // Define the object that we will be manipulating
-  collision_objects[1].header.frame_id = "summit_xl_base_footprint";
-  collision_objects[1].id = "object";
-
-  /* Define the primitive and its dimensions. */
-  collision_objects[1].primitives.resize(1);
-  collision_objects[1].primitives[0].type = collision_objects[1].primitives[0].BOX;
-  collision_objects[1].primitives[0].dimensions.resize(3);
-  collision_objects[1].primitives[0].dimensions[0] = 0.025;
-  collision_objects[1].primitives[0].dimensions[1] = 0.025;
-  collision_objects[1].primitives[0].dimensions[2] = 0.2;
-
-  /* Define the pose of the object. */
-  collision_objects[1].primitive_poses.resize(1);
-  collision_objects[1].primitive_poses[0].position.x = 2;
-  collision_objects[1].primitive_poses[0].position.y = 2;
-  collision_objects[1].primitive_poses[0].position.z = 1.0;
-
-  collision_objects[2].operation = collision_objects[2].MOVE;
-
-  planning_scene_interface.applyCollisionObjects(collision_objects);
 }
 
 void add_collision_objects(
