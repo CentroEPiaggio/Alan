@@ -298,12 +298,13 @@ void update_collision_objects(
   position_err_fixed.y = table1_pose_fixed.position.y - base_pose.position.y;
   position_err_fixed.z = table1_pose_fixed.position.z - base_pose.position.z;
 
-  double yaw_err = -table1_yaw_fixed + tf::getYaw(base_pose.orientation);
-  double cos_th = std::cos(yaw_err);
-  double sin_th = std::sin(yaw_err);
+  double yaw_err = table1_yaw_fixed - tf::getYaw(base_pose.orientation);
+  double cos_th = std::cos(tf::getYaw(base_pose.orientation));
+  double sin_th = std::sin(tf::getYaw(base_pose.orientation));
   double table1_body_x = cos_th * position_err_fixed.x  + sin_th * position_err_fixed.y;
   double table1_body_y = -sin_th * position_err_fixed.x + cos_th * position_err_fixed.y;
 
+  
   /*
   table1_pos_fixed = [2, 2, 0.45]
   table1_quat_fixed = [0, 0, 0, 1]
@@ -374,7 +375,7 @@ void update_collision_objects(
   collision_objects[1].primitive_poses[0].position.y = 2;
   collision_objects[1].primitive_poses[0].position.z = 1.0;
 
-  collision_objects[1].operation = collision_objects[2].MOVE;
+  collision_objects[2].operation = collision_objects[2].MOVE;
 
   planning_scene_interface.applyCollisionObjects(collision_objects);
 }
