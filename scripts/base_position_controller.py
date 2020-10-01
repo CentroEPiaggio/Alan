@@ -73,7 +73,7 @@ def pose_control(current, reference):
   if cmd_theta > max_ang_vel:
     cmd_theta = max_ang_vel
   
-  if abs(err_theta) < 0.05:
+  if abs(err_theta) < 0.005:
     cmd_msg.linear.x = cmd_position[0]
     cmd_msg.linear.y = cmd_position[1]
     cmd_msg.angular.z = 0
@@ -92,7 +92,7 @@ def is_goal_reached(current, reference):
   
   rospy.logdebug("err_position {}".format(np.linalg.norm(err_position)))
   rospy.logdebug("err_theta {}".format(abs(err_theta)))
-  if np.linalg.norm(err_position) > 0.05 or abs(err_theta) > 0.05:
+  if np.linalg.norm(err_position) > 0.005 or abs(err_theta) > 0.005:
     return False
   return True
 
