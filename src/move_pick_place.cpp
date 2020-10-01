@@ -29,18 +29,26 @@ bool is_object_picked = false;
 geometry_msgs::Pose2D
 compute_base_des_pose(const Eigen::Vector3d& des_position);
 
+std::vector<moveit_msgs::Grasp>
+compute_arm_ee_pick_grasp(const geometry_msgs::Pose& object_pose,
+                          const geometry_msgs::Pose2D& base_pose,
+                          double grip_closure);
+
 trajectory_msgs::JointTrajectory open_gripper();
-trajectory_msgs::JointTrajectory close_gripper(double object_dimension);
+trajectory_msgs::JointTrajectory close_gripper(double grip_closure);
 
 void update_collision_objects(
     moveit::planning_interface::PlanningSceneInterface& planning_scene_interface,
-    const geometry_msgs::Pose& base_pose);
+    const geometry_msgs::Pose& base_pose,
+    const geometry_msgs::Pose& object_pose,
+    const geometry_msgs::Pose& table_pose);
 void add_collision_objects(
-    moveit::planning_interface::PlanningSceneInterface& planning_scene_interface);
+    moveit::planning_interface::PlanningSceneInterface& planning_scene_interface,
+    const geometry_msgs::Pose& object_pose,
+    const geometry_msgs::Pose& table_pose);
 
 void pick(moveit::planning_interface::MoveGroupInterface& move_group,
-          const geometry_msgs::Pose& grasp_pose,
-          double object_dimension);
+          const std::vector<moveit_msgs::Grasp>& grasp_pose);
 
 void place(moveit::planning_interface::MoveGroupInterface& group,
            const geometry_msgs::Pose& place_pose);
@@ -53,8 +61,9 @@ struct references {
 
 struct target {
   geometry_msgs::Pose2D base;
-  geometry_msgs::Pose arm_ee_pick;
+  std::vector<moveit_msgs::Grasp> arm_ee_pick;
   geometry_msgs::Pose arm_ee_place;
+  double grip_closure;
 };
 
 // Events 
@@ -77,7 +86,7 @@ constexpr auto do_pick_place = [](references& ref, target& target,
                                   moveit::planning_interface::MoveGroupInterface& group) {
   ROS_INFO("calling do_pick_place");
   ROS_INFO("calling pick");
-  pick(group, target.arm_ee_pick, 0.025);
+  pick(group, target.arm_ee_pick);
   ROS_INFO("calling place");
   place(group, target.arm_ee_place);
 };
@@ -142,14 +151,10 @@ int main(int argc, char** argv) {
            base_des_pose.x, base_des_pose.y, base_des_pose.theta);
 
   target sm_target;
-  sm_target.base = compute_base_des_pose(des_position);
-  tf2::Quaternion pick_orientation;
-  pick_orientation.setRPY(-M_PI / 2, -M_PI / 4, -M_PI / 2);
-  sm_target.arm_ee_pick.orientation = tf2::toMsg(pick_orientation);
-  sm_target.arm_ee_pick.position.x = 0.405;
-  sm_target.arm_ee_pick.position.y = 0.0;
-  sm_target.arm_ee_pick.position.z = 1.0;
-
+  sm_target.grip_closure = grip_closure;
+  sm_target.base = base_des_pose;
+  sm_target.arm_ee_pick = compute_arm_ee_pick_grasp(object_pose, base_des_pose,
+                                                    grip_closure);
   tf2::Quaternion place_orientation;
   place_orientation.setRPY(M_PI, M_PI / 2, 0);
   sm_target.arm_ee_place.orientation = tf2::toMsg(place_orientation);
@@ -165,7 +170,7 @@ int main(int argc, char** argv) {
   ROS_INFO_STREAM("planning frame " << group.getPlanningFrame());
   group.setPlanningTime(45.0);
 
-  add_collision_objects(planning_scene_interface);
+  add_collision_objects(planning_scene_interface, object_pose, table_pose);
   ros::WallDuration(1.0).sleep();
   
   boost::sml::sm<state_machine> sm{sm_references, sm_target, group};
@@ -182,7 +187,8 @@ int main(int argc, char** argv) {
   auto base_odom_sub = nh.subscribe<nav_msgs::Odometry>(
       "/robotnik_base_control/odom", 1,
       [&](const nav_msgs::Odometry::ConstPtr& msg) { 
-        update_collision_objects(planning_scene_interface, msg->pose.pose);
+        update_collision_objects(planning_scene_interface, msg->pose.pose,
+                                 object_pose, table_pose);
       });
 
   sm.process_event(start{});
@@ -214,6 +220,99 @@ compute_base_des_pose(const Eigen::Vector3d& des_position) {
   return base_des_pose;
 }
 
+geometry_msgs::Pose pose_2d_to_3d(const geometry_msgs::Pose2D& pose_2d) {
+  geometry_msgs::Pose pose;
+  pose.position.x = pose_2d.x;
+  pose.position.y = pose_2d.y;
+  
+  tf2::Quaternion orientation;
+  orientation.setRPY(0, 0, pose_2d.theta);
+  pose.orientation = tf2::toMsg(orientation);
+  return pose;
+}
+
+std::vector<moveit_msgs::Grasp>
+compute_arm_ee_pick_grasp(const geometry_msgs::Pose& object_pose,
+                          const geometry_msgs::Pose2D& base_pose_2d,
+                          double grip_closure) {
+  geometry_msgs::Pose base_pose = pose_2d_to_3d(base_pose_2d);
+
+  Eigen::Affine3d tf_fixed_object;
+  Eigen::Affine3d tf_fixed_base;
+  tf2::fromMsg(object_pose, tf_fixed_object);
+  tf2::fromMsg(base_pose, tf_fixed_base);
+
+  Eigen::Affine3d tf_base_object = tf_fixed_base.inverse() * tf_fixed_object;
+  Eigen::Matrix3d rot_base_object = tf_base_object.rotation();
+
+  Eigen::Matrix3d rot_0;
+  rot_0 = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitZ()) *
+          Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitX());
+
+  Eigen::Matrix3d rot_y_pi_half;
+  rot_y_pi_half = Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY());
+  Eigen::Matrix3d rot_z_pi_quat;
+  rot_z_pi_quat = Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ());
+
+  constexpr int grasp_guesses = 4;
+  std::vector<Eigen::Matrix3d> grasp_rotations(grasp_guesses);
+  grasp_rotations[0] = rot_base_object * rot_0;
+  for (int i = 1; i < grasp_rotations.size(); ++i) {
+    grasp_rotations[i] = grasp_rotations[i - 1] * rot_y_pi_half;
+  }
+
+  std::vector<geometry_msgs::Pose> grasp_poses(grasp_guesses);
+  for (int i = 0; i < grasp_poses.size(); ++i) {
+    Eigen::Affine3d tf;
+    tf.linear() = grasp_rotations[i] * rot_z_pi_quat;
+    Eigen::Vector3d offset = {0, 0, -0.10};
+    tf.translation() = tf_base_object.translation() + tf.linear() * offset;
+    grasp_poses[i] = tf2::toMsg(tf);
+    ROS_INFO("grasp_pose %d: position [%f %f %f]", i,
+             grasp_poses[i].position.x, grasp_poses[i].position.y,
+             grasp_poses[i].position.z);
+    ROS_INFO("grasp_pose %d: orientation [%f %f %f %f]", i,
+             grasp_poses[i].orientation.x, grasp_poses[i].orientation.y,
+             grasp_poses[i].orientation.z, grasp_poses[i].orientation.w);
+  }
+
+  std::vector<moveit_msgs::Grasp> grasps(grasp_guesses);
+  for (int i = 0; i < grasps.size(); ++i) {
+    auto& grasp = grasps[0];
+    grasp.grasp_pose.header.frame_id = "summit_xl_base_footprint";
+    grasp.grasp_pose.pose = grasp_poses[i];
+
+    grasp.pre_grasp_approach.direction.header.frame_id = "panda_link8";
+    grasp.pre_grasp_approach.direction.vector.z = 1.0;
+    grasp.pre_grasp_approach.min_distance = 0.095;
+    grasp.pre_grasp_approach.desired_distance = 0.115;
+
+    grasp.post_grasp_retreat.direction.header.frame_id = "summit_xl_base_footprint";
+    grasp.post_grasp_retreat.direction.vector.z = 1.0;
+    grasp.post_grasp_retreat.min_distance = 0.1;
+    grasp.post_grasp_retreat.desired_distance = 0.25;
+
+    grasp.pre_grasp_posture = open_gripper();
+
+    grasp.grasp_posture = close_gripper(grip_closure);
+  }
+
+  return grasps;
+
+  /*
+  geometry_msgs::Pose pick_pose;
+  pick_pose.position.x = tf_base_object(0, 3) - 0.0905;
+  pick_pose.position.y = tf_base_object(1, 3);
+  pick_pose.position.z = tf_base_object(2, 3);
+
+  tf2::Quaternion pick_orientation;
+  pick_orientation.setRPY(-M_PI / 2, -M_PI / 4, -M_PI / 2);
+  pick_pose.orientation = tf2::toMsg(pick_orientation);
+
+  return pick_pose;
+  */
+}
+
 void base_goal_reached_callback(const std_msgs::Bool::ConstPtr& msg,
                                 boost::sml::sm<state_machine>& sm) {
   auto is_prev_goal_reached = is_base_goal_reached;
@@ -232,13 +331,13 @@ trajectory_msgs::JointTrajectory open_gripper() {
 
   posture.points.resize(1);
   posture.points[0].positions.resize(2);
-  posture.points[0].positions[0] = 0.04;
-  posture.points[0].positions[1] = 0.04;
+  posture.points[0].positions[0] = 0.05;
+  posture.points[0].positions[1] = 0.05;
   posture.points[0].time_from_start = ros::Duration(0.5);
   return posture;
 }
 
-trajectory_msgs::JointTrajectory close_gripper(double object_dimension) {
+trajectory_msgs::JointTrajectory close_gripper(double grip_closure) {
   trajectory_msgs::JointTrajectory posture;
   posture.joint_names.resize(2);
   posture.joint_names[0] = "panda_finger_joint1";
@@ -246,39 +345,14 @@ trajectory_msgs::JointTrajectory close_gripper(double object_dimension) {
 
   posture.points.resize(1);
   posture.points[0].positions.resize(2);
-  posture.points[0].positions[0] = 0.97 * object_dimension / 2.0;
-  posture.points[0].positions[1] = 0.97 * object_dimension / 2.0;
+  posture.points[0].positions[0] = grip_closure / 2.0;
+  posture.points[0].positions[1] = grip_closure / 2.0;
   posture.points[0].time_from_start = ros::Duration(0.5);
   return posture;
 }
 
 void pick(moveit::planning_interface::MoveGroupInterface& move_group,
-          const geometry_msgs::Pose& grasp_pose,
-          double object_dimension) {
-  std::vector<moveit_msgs::Grasp> grasps;
-  grasps.resize(1);
-
-  grasps[0].grasp_pose.header.frame_id = "summit_xl_base_footprint";
-  grasps[0].grasp_pose.pose = grasp_pose;
-
-  /* Defined with respect to frame_id */
-  grasps[0].pre_grasp_approach.direction.header.frame_id = "summit_xl_base_footprint";
-  /* Direction is set as positive x axis */
-  grasps[0].pre_grasp_approach.direction.vector.x = 1.0;
-  grasps[0].pre_grasp_approach.min_distance = 0.095;
-  grasps[0].pre_grasp_approach.desired_distance = 0.115;
-
-  /* Defined with respect to frame_id */
-  grasps[0].post_grasp_retreat.direction.header.frame_id = "summit_xl_base_footprint";
-  /* Direction is set as positive z axis */
-  grasps[0].post_grasp_retreat.direction.vector.z = 1.0;
-  grasps[0].post_grasp_retreat.min_distance = 0.1;
-  grasps[0].post_grasp_retreat.desired_distance = 0.25;
-
-  grasps[0].pre_grasp_posture = open_gripper();
-
-  grasps[0].grasp_posture = close_gripper(object_dimension);
-
+          const std::vector<moveit_msgs::Grasp>& grasps) {
   move_group.setSupportSurfaceName("table1");
   is_object_picked = true;
   move_group.pick("object", grasps);
@@ -315,23 +389,9 @@ void place(moveit::planning_interface::MoveGroupInterface& group,
 
 void update_collision_objects(
     moveit::planning_interface::PlanningSceneInterface& planning_scene_interface,
-    const geometry_msgs::Pose& base_pose) {
-  geometry_msgs::Pose table_pose;
-  tf2::Quaternion table_orientation;
-  table_orientation.setRPY(0, 0, M_PI/4);
-  table_pose.orientation = tf2::toMsg(table_orientation);
-  table_pose.position.x = 2;
-  table_pose.position.y = 2;
-  table_pose.position.z = 0.45;
-
-  geometry_msgs::Pose object_pose;
-  tf2::Quaternion object_orientation;
-  object_orientation.setRPY(0, 0, M_PI/4);
-  object_pose.orientation = tf2::toMsg(object_orientation);
-  object_pose.position.x = 2;
-  object_pose.position.y = 2;
-  object_pose.position.z = 1;
-  
+    const geometry_msgs::Pose& base_pose,
+    const geometry_msgs::Pose& object_pose,
+    const geometry_msgs::Pose& table_pose) {  
   Eigen::Affine3d tf_fixed_base;
   Eigen::Affine3d tf_fixed_table;
   Eigen::Affine3d tf_fixed_object;
@@ -373,7 +433,9 @@ void update_collision_objects(
 }
 
 void add_collision_objects(
-    moveit::planning_interface::PlanningSceneInterface& planning_scene_interface) {
+    moveit::planning_interface::PlanningSceneInterface& planning_scene_interface,
+    const geometry_msgs::Pose& object_pose,
+    const geometry_msgs::Pose& table_pose) {
   // Create vector to hold 3 collision objects.
   std::vector<moveit_msgs::CollisionObject> collision_objects;
   collision_objects.resize(3);
@@ -392,9 +454,7 @@ void add_collision_objects(
 
   /* Define the pose of the table. */
   collision_objects[0].primitive_poses.resize(1);
-  collision_objects[0].primitive_poses[0].position.x = 2;
-  collision_objects[0].primitive_poses[0].position.y = 2;
-  collision_objects[0].primitive_poses[0].position.z = 0.45;
+  collision_objects[0].primitive_poses[0] = table_pose;
 
   collision_objects[0].operation = collision_objects[0].ADD;
 
@@ -432,9 +492,7 @@ void add_collision_objects(
 
   /* Define the pose of the object. */
   collision_objects[2].primitive_poses.resize(1);
-  collision_objects[2].primitive_poses[0].position.x = 2;
-  collision_objects[2].primitive_poses[0].position.y = 2;
-  collision_objects[2].primitive_poses[0].position.z = 1.0;
+  collision_objects[2].primitive_poses[0] = object_pose;
 
   collision_objects[2].operation = collision_objects[2].ADD;
 
