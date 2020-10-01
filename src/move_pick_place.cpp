@@ -112,17 +112,34 @@ int main(int argc, char** argv) {
   ros::AsyncSpinner spinner(2);
   spinner.start();
 
-  if (argc < 4) {
-    throw std::runtime_error("Missing arguments");
-  }
+  geometry_msgs::Pose object_pose;
+  geometry_msgs::Pose table_pose;
+  geometry_msgs::Pose2D base_des_pose;
+  double object_theta;
+  double table_theta;
+  double grip_closure;
 
-  Eigen::Vector3d des_position;
-  des_position[0] = std::stod(argv[1]);
-  des_position[1] = std::stod(argv[2]);
-  des_position[2] = std::stod(argv[3]);
-  /*ROS_INFO_STREAM("Desired position: [%d, %d, %d]",
-           des_position[0], des_position[1], des_position[2]);*/
-  ROS_INFO_STREAM("Desired position: " << des_position);
+  nh.param<double>("/object/x", object_pose.position.x, 2.0);
+  nh.param<double>("/object/y", object_pose.position.y, 2.0);
+  nh.param<double>("/object/z", object_pose.position.z, 1.0);
+  nh.param<double>("/grip_closure", grip_closure, 0.02425);
+  nh.param<double>("/object/theta", object_theta, M_PI/4);
+  nh.param<double>("/table/x", table_pose.position.x, 2.0);
+  nh.param<double>("/table/y", table_pose.position.y, 2.0);
+  nh.param<double>("/table/z", table_pose.position.z, 0.45);
+  nh.param<double>("/table/theta", table_theta, M_PI/4);
+  nh.param<double>("/base_des/x", base_des_pose.x, 1.55);
+  nh.param<double>("/base_des/y", base_des_pose.y, 1.55);
+  nh.param<double>("/base_des/theta", base_des_pose.theta, M_PI/4);
+
+  tf2::Quaternion orientation;
+  orientation.setRPY(0, 0, object_theta);
+  object_pose.orientation = tf2::toMsg(orientation);
+  orientation.setRPY(0, 0, table_theta);
+  table_pose.orientation = tf2::toMsg(orientation);
+
+  ROS_INFO("Base desired pose: [%f, %f, %f]",
+           base_des_pose.x, base_des_pose.y, base_des_pose.theta);
 
   target sm_target;
   sm_target.base = compute_base_des_pose(des_position);
