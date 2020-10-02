@@ -72,15 +72,16 @@ def pose_control(current, reference):
   cmd_theta = gain_orientation * err_theta
   if cmd_theta > max_ang_vel:
     cmd_theta = max_ang_vel
-  
-  if abs(err_theta) < 0.005:
+
+  cmd_msg.angular.z = cmd_theta
+  if abs(err_theta) < 0.05:
     cmd_msg.linear.x = cmd_position[0]
     cmd_msg.linear.y = cmd_position[1]
     cmd_msg.angular.z = 0
   else:
     cmd_msg.linear.x = 0
     cmd_msg.linear.y = 0
-    cmd_msg.angular.z = cmd_theta
+  
   return cmd_msg
 
 
