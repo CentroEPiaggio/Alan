@@ -51,7 +51,7 @@ roslaunch alan sim.launch
 
 ## Example Tasks
 
-### 1 - Grasping Task
+### 1 - End Effector position control
 Launch Gazebo by running:
 ```
 source devel/setup.bash
@@ -66,3 +66,27 @@ roslaunch alan ee_pose_control.launch ee_x:=1.0 ee_y:=1.0 ee_z:=0.7
 where [`ee_x`, `ee_y`, `ee_z`] is the desired end-effector position.
 
 <img src="images/ee_pose_task.png" >
+
+### 2 - Pick and Place of an object
+Launch Gazebo by running:
+```
+source devel/setup.bash
+roslaunch alan sim.launch
+```
+
+In a separate terminal run:
+```
+roslaunch alan move_pick_place.launch
+```
+The launch file has the following arguments:
+- `base_x`: Desired position of the Summit base - X coordinate [default 0.4]
+- `base_y`: Desired position of the Summit base - Y coordinate [default 0]
+- `base_theta`: Desired yaw of the Summit base [default 0.0]
+- `table_x`: Position of the table - X coordinate [default 1.0]
+- `table_y`: Position of the table - Y coordinate [default 0.0]
+- `table_theta`: Yaw of the table [default 0]
+- `object_x`: Position of the object - X coordinate [default 1.0]
+- `object_y`: Position of the object - Y coordinate [default 0.0]
+- `object_theta`: Yaw of the object [default 0]
+
+
