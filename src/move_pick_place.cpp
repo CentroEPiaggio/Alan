@@ -359,33 +359,28 @@ void place(moveit::planning_interface::MoveGroupInterface& group,
            const geometry_msgs::Pose& place_pose,
            const geometry_msgs::Pose& object_pose,
            const geometry_msgs::Pose& base_pose) {
-  Eigen::Affine3d tf_base_ee_start;
-  tf2::fromMsg(group.getCurrentPose().pose, tf_base_ee_start);
+  Eigen::Quaterniond rot_base_ee_start;
+  tf2::fromMsg(group.getCurrentPose().pose.orientation, rot_base_ee_start);
 
-  Eigen::Affine3d tf_fixed_object;
-  Eigen::Affine3d tf_fixed_base;
-  tf2::fromMsg(object_pose, tf_fixed_object);
-  tf2::fromMsg(base_pose, tf_fixed_base);
+  Eigen::Quaterniond rot_fixed_object;
+  Eigen::Quaterniond rot_fixed_base;
+  tf2::fromMsg(object_pose.orientation, rot_fixed_object);
+  tf2::fromMsg(base_pose.orientation, rot_fixed_base);
 
-  Eigen::Affine3d tf_base_object_start = tf_fixed_base.inverse() * tf_fixed_object;
+  Eigen::Quaterniond rot_base_object_start = rot_fixed_base.inverse() * rot_fixed_object;
 
-  Eigen::Affine3d tf_base_ee_end;
-  tf2::fromMsg(place_pose, tf_base_ee_end);
+  Eigen::Quaterniond rot_base_ee_end;
+  tf2::fromMsg(place_pose.orientation, rot_base_ee_end);
 
-  Eigen::Affine3d tf_base_object_end = tf_base_ee_end *
-                                       tf_base_ee_start.inverse() *
-                                       tf_base_object_start;
-  ROS_INFO_STREAM("tf_fixed_object:\n " << tf_fixed_object.matrix());
-  ROS_INFO_STREAM("tf_fixed_base:\n " << tf_fixed_base.matrix());
-  ROS_INFO_STREAM("tf_base_object_start:\n " << tf_base_object_start.matrix());
-  ROS_INFO_STREAM("tf_base_ee_end:\n " << tf_base_ee_end.matrix());
-  ROS_INFO_STREAM("tf_base_object_end:\n " << tf_base_object_end.matrix());
+  Eigen::Quaterniond rot_base_object_end = rot_base_ee_end *
+                                       rot_base_ee_start.inverse() *
+                                       rot_base_object_start;
 
   std::vector<moveit_msgs::PlaceLocation> place_location;
   place_location.resize(1);
   
   place_location[0].place_pose.header.frame_id = "summit_xl_base_footprint";
-  place_location[0].place_pose.pose = tf2::toMsg(tf_base_object_end);
+  place_location[0].place_pose.pose.orientation = tf2::toMsg(rot_base_object_end);
   place_location[0].place_pose.pose.position = place_pose.position;
   
   /* Defined with respect to frame_id */
