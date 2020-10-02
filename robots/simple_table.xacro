@@ -37,6 +37,6 @@
     <gazebo reference="object_link">
         <mu1>1</mu1>
         <mu2>1</mu2>
-        <material>Gazebo/Green</material>
+        <material>Gazebo/White</material>
     </gazebo>
 </robot>
