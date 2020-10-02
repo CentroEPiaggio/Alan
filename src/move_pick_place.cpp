@@ -29,6 +29,10 @@ bool is_object_picked = false;
 geometry_msgs::Pose2D
 compute_base_des_pose(const Eigen::Vector3d& des_position);
 
+geometry_msgs::Pose
+pose_2d_to_3d(const geometry_msgs::Pose2D& pose_2d);
+
+
 std::vector<moveit_msgs::Grasp>
 compute_arm_ee_pick_grasp(const geometry_msgs::Pose& object_pose,
                           const geometry_msgs::Pose2D& base_pose,
@@ -51,7 +55,9 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group,
           const std::vector<moveit_msgs::Grasp>& grasp_pose);
 
 void place(moveit::planning_interface::MoveGroupInterface& group,
-           const geometry_msgs::Pose& place_pose);
+           const geometry_msgs::Pose& place_pose,
+           const geometry_msgs::Pose& object_pose,
+           const geometry_msgs::Pose& base_pose);
 
 
 // Dependencies
@@ -63,6 +69,7 @@ struct target {
   geometry_msgs::Pose2D base;
   std::vector<moveit_msgs::Grasp> arm_ee_pick;
   geometry_msgs::Pose arm_ee_place;
+  geometry_msgs::Pose object_pose;
   double grip_closure;
 };
 
@@ -88,7 +95,8 @@ constexpr auto do_pick_place = [](references& ref, target& target,
   ROS_INFO("calling pick");
   pick(group, target.arm_ee_pick);
   ROS_INFO("calling place");
-  place(group, target.arm_ee_place);
+  place(group, target.arm_ee_place, target.object_pose,
+        pose_2d_to_3d(target.base));
 };
 
 constexpr auto arm_to_ready = [](references& ref, target& target,
@@ -152,15 +160,17 @@ int main(int argc, char** argv) {
 
   target sm_target;
   sm_target.grip_closure = grip_closure;
+  sm_target.object_pose = object_pose;
   sm_target.base = base_des_pose;
   sm_target.arm_ee_pick = compute_arm_ee_pick_grasp(object_pose, base_des_pose,
                                                     grip_closure);
-  tf2::Quaternion place_orientation;
-  place_orientation.setRPY(M_PI, M_PI / 2, 0);
+  Eigen::Quaterniond place_orientation;
+  place_orientation = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()) *
+                      Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ());
   sm_target.arm_ee_place.orientation = tf2::toMsg(place_orientation);
   sm_target.arm_ee_place.position.x = -0.33;
   sm_target.arm_ee_place.position.y = 0.20;
-  sm_target.arm_ee_place.position.z = 0.55;
+  sm_target.arm_ee_place.position.z = 0.65;
 
   references sm_references;
 
@@ -298,19 +308,6 @@ compute_arm_ee_pick_grasp(const geometry_msgs::Pose& object_pose,
   }
 
   return grasps;
-
-  /*
-  geometry_msgs::Pose pick_pose;
-  pick_pose.position.x = tf_base_object(0, 3) - 0.0905;
-  pick_pose.position.y = tf_base_object(1, 3);
-  pick_pose.position.z = tf_base_object(2, 3);
-
-  tf2::Quaternion pick_orientation;
-  pick_orientation.setRPY(-M_PI / 2, -M_PI / 4, -M_PI / 2);
-  pick_pose.orientation = tf2::toMsg(pick_orientation);
-
-  return pick_pose;
-  */
 }
 
 void base_goal_reached_callback(const std_msgs::Bool::ConstPtr& msg,
@@ -359,30 +356,55 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group,
 }
 
 void place(moveit::planning_interface::MoveGroupInterface& group,
-           const geometry_msgs::Pose& place_pose) {
+           const geometry_msgs::Pose& place_pose,
+           const geometry_msgs::Pose& object_pose,
+           const geometry_msgs::Pose& base_pose) {
+  Eigen::Affine3d tf_base_ee_start;
+  tf2::fromMsg(group.getCurrentPose().pose, tf_base_ee_start);
+
+  Eigen::Affine3d tf_fixed_object;
+  Eigen::Affine3d tf_fixed_base;
+  tf2::fromMsg(object_pose, tf_fixed_object);
+  tf2::fromMsg(base_pose, tf_fixed_base);
+
+  Eigen::Affine3d tf_base_object_start = tf_fixed_base.inverse() * tf_fixed_object;
+
+  Eigen::Affine3d tf_base_ee_end;
+  tf2::fromMsg(place_pose, tf_base_ee_end);
+
+  Eigen::Affine3d tf_base_object_end = tf_base_ee_end *
+                                       tf_base_ee_start.inverse() *
+                                       tf_base_object_start;
+  ROS_INFO_STREAM("tf_fixed_object:\n " << tf_fixed_object.matrix());
+  ROS_INFO_STREAM("tf_fixed_base:\n " << tf_fixed_base.matrix());
+  ROS_INFO_STREAM("tf_base_object_start:\n " << tf_base_object_start.matrix());
+  ROS_INFO_STREAM("tf_base_ee_end:\n " << tf_base_ee_end.matrix());
+  ROS_INFO_STREAM("tf_base_object_end:\n " << tf_base_object_end.matrix());
+
   std::vector<moveit_msgs::PlaceLocation> place_location;
-  place_location.resize(1);  
-
+  place_location.resize(1);
+  
   place_location[0].place_pose.header.frame_id = "summit_xl_base_footprint";
-  place_location[0].place_pose.pose = place_pose;
-
+  place_location[0].place_pose.pose = tf2::toMsg(tf_base_object_end);
+  place_location[0].place_pose.pose.position = place_pose.position;
+  
   /* Defined with respect to frame_id */
   place_location[0].pre_place_approach.direction.header.frame_id = "summit_xl_base_footprint";
   /* Direction is set as negative z axis */
   place_location[0].pre_place_approach.direction.vector.z = -1.0;
   place_location[0].pre_place_approach.min_distance = 0.095;
   place_location[0].pre_place_approach.desired_distance = 0.115;
-
+  
   /* Defined with respect to frame_id */
   place_location[0].post_place_retreat.direction.header.frame_id = "summit_xl_base_footprint";
   /* Direction is set as negative y axis */
   place_location[0].post_place_retreat.direction.vector.z = 1.0;
   place_location[0].post_place_retreat.min_distance = 0.1;
   place_location[0].post_place_retreat.desired_distance = 0.25;
-
+  
   /* Similar to the pick case */
   place_location[0].post_place_posture = open_gripper();
-
+  
   group.setSupportSurfaceName("summit");
   group.place("object", place_location);
 }
