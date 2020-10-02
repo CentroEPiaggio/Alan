@@ -1,0 +1,38 @@
+<launch>
+  <arg name="base_x" default="0.4" />
+  <arg name="base_y" default="0" />
+  <arg name="base_theta" default="0.0" />
+  <arg name="table_x" default="1.0" />
+  <arg name="table_y" default="0.0" />
+  <arg name="table_theta" default="0" />
+  <arg name="object_x" default="1.0" />
+  <arg name="object_y" default="0.0" />
+  <arg name="object_theta" default="0" />
+
+  <include file="$(find alan)/launch/pick_place_world.launch">
+    <arg name="table_x" value="$(arg table_x)" />
+    <arg name="table_y" value="$(arg table_y)" />
+    <arg name="table_theta" value="$(arg table_theta)" />
+    <arg name="object_x" value="$(arg object_x)" />
+    <arg name="object_y" value="$(arg object_y)" />
+    <arg name="object_theta" value="$(arg object_theta)" />
+  </include>
+
+  <node name="base_position_controller" pkg="alan" type="base_position_controller.py"
+        output="screen" />
+
+  <node name="move_pick_place" pkg="alan" type="move_pick_place" output="screen">
+    <param name="base_des/x" value="$(arg base_x)" />
+    <param name="base_des/y" value="$(arg base_y)" />
+    <param name="base_des/theta" value="$(arg base_theta)" />
+    <param name="object/x" value="$(arg object_x)" />
+    <param name="object/y" value="$(arg object_y)" />
+    <param name="object/z" value="1.0" />
+    <param name="object/theta" value="$(arg object_theta)" />
+    <param name="table/x" value="$(arg table_x)" />
+    <param name="table/y" value="$(arg table_y)" />
+    <param name="table/z" value="0.45" />
+    <param name="table/theta" value="$(arg table_theta)" />
+    <param name="grip_closure" value="0.02425" />
+  </node>
+</launch>

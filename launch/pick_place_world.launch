@@ -1,11 +1,18 @@
 <launch>
-    <param name="table_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/simple_table.xacro"/>
-    <node name="spawn_start_table" pkg="gazebo_ros" type="spawn_model"
-          args="-param table_description -urdf -model start_table -x 2 -y 2 -z 0.45 -Y 0.785"/>
+  <arg name="table_x" default="2.0" />
+  <arg name="table_y" default="2.0" />
+  <arg name="table_theta" default="0" />
+  <arg name="object_x" default="2.0" />
+  <arg name="object_y" default="2.0" />
+  <arg name="object_theta" default="0" />
 
-    <param name="box_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/box.xacro"/>
-    <node name="box_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" args="robot_description:=box_description" />
+  <param name="table_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/simple_table.xacro"/>
+  <node name="spawn_start_table" pkg="gazebo_ros" type="spawn_model"
+        args="-param table_description -urdf -model start_table -x $(arg table_x) -y $(arg table_y) -z 0.45 -Y $(arg table_theta)"/>
 
-    <node name="spawn_object" pkg="gazebo_ros" type="spawn_model"
-          args="-param box_description -urdf -model object -x 2 -y 2 -z 1.0 -Y 0.785"/>
+  <param name="box_description" command="$(find xacro)/xacro --inorder $(find alan)/robots/box.xacro"/>
+  <node name="box_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" args="robot_description:=box_description" />
+
+  <node name="spawn_object" pkg="gazebo_ros" type="spawn_model"
+        args="-param box_description -urdf -model object -x $(arg object_x) -y $(arg object_y) -z 1.0 -Y $(arg object_theta)"/>
 </launch>
