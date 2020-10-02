@@ -111,7 +111,7 @@ struct state_machine {
     using namespace boost::sml;
 
     return make_transition_table(
-      *"waiting_go"_s + event<start>                  / move_base_to_home   = "robot_ready"_s,
+      *"waiting_go"_s + event<start>  / ( move_base_to_home, arm_to_ready ) = "robot_ready"_s,
       "robot_ready"_s + event<base_goal_reached>      / move_base_to_target = "base_approaching"_s,
       "base_approaching"_s + event<base_goal_reached> / do_pick_place       = "base_going_home"_s,
       "base_going_home"_s + on_entry<_>               / ( move_base_to_home, arm_to_ready ),
