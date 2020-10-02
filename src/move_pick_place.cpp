@@ -288,7 +288,7 @@ compute_arm_ee_pick_grasp(const geometry_msgs::Pose& object_pose,
 
   std::vector<moveit_msgs::Grasp> grasps(grasp_guesses);
   for (int i = 0; i < grasps.size(); ++i) {
-    auto& grasp = grasps[0];
+    auto& grasp = grasps[i];
     grasp.grasp_pose.header.frame_id = "summit_xl_base_footprint";
     grasp.grasp_pose.pose = grasp_poses[i];
 
