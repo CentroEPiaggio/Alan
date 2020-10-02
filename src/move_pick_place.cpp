@@ -168,9 +168,9 @@ int main(int argc, char** argv) {
   place_orientation = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()) *
                       Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ());
   sm_target.arm_ee_place.orientation = tf2::toMsg(place_orientation);
-  sm_target.arm_ee_place.position.x = -0.33;
+  sm_target.arm_ee_place.position.x = -0.25;
   sm_target.arm_ee_place.position.y = 0.20;
-  sm_target.arm_ee_place.position.z = 0.65;
+  sm_target.arm_ee_place.position.z = 0.55;
 
   references sm_references;
 
