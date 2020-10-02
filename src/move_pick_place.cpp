@@ -125,7 +125,7 @@ void base_goal_reached_callback(const std_msgs::Bool::ConstPtr& msg,
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "move_pick_place");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   ros::AsyncSpinner spinner(2);
   spinner.start();
 
@@ -136,18 +136,18 @@ int main(int argc, char** argv) {
   double table_theta;
   double grip_closure;
 
-  nh.param<double>("/object/x", object_pose.position.x, 2.0);
-  nh.param<double>("/object/y", object_pose.position.y, 2.0);
-  nh.param<double>("/object/z", object_pose.position.z, 1.0);
-  nh.param<double>("/grip_closure", grip_closure, 0.02425);
-  nh.param<double>("/object/theta", object_theta, M_PI/4);
-  nh.param<double>("/table/x", table_pose.position.x, 2.0);
-  nh.param<double>("/table/y", table_pose.position.y, 2.0);
-  nh.param<double>("/table/z", table_pose.position.z, 0.45);
-  nh.param<double>("/table/theta", table_theta, M_PI/4);
-  nh.param<double>("/base_des/x", base_des_pose.x, 1.55);
-  nh.param<double>("/base_des/y", base_des_pose.y, 1.55);
-  nh.param<double>("/base_des/theta", base_des_pose.theta, M_PI/4);
+  nh.param<double>("object/x", object_pose.position.x, 2.0);
+  nh.param<double>("object/y", object_pose.position.y, 2.0);
+  nh.param<double>("object/z", object_pose.position.z, 1.0);
+  nh.param<double>("grip_closure", grip_closure, 0.02425);
+  nh.param<double>("object/theta", object_theta, M_PI/4);
+  nh.param<double>("table/x", table_pose.position.x, 2.0);
+  nh.param<double>("table/y", table_pose.position.y, 2.0);
+  nh.param<double>("table/z", table_pose.position.z, 0.45);
+  nh.param<double>("table/theta", table_theta, M_PI/4);
+  nh.param<double>("base_des/x", base_des_pose.x, 1.55);
+  nh.param<double>("base_des/y", base_des_pose.y, 1.55);
+  nh.param<double>("base_des/theta", base_des_pose.theta, M_PI/4);
 
   tf2::Quaternion orientation;
   orientation.setRPY(0, 0, object_theta);
