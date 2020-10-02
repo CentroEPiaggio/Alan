@@ -58,7 +58,7 @@ def pose_control(current, reference):
   ])
 
   err_position = reference_position - current_position
-  if np.linalg.norm(err_position) > 0.05:
+  if np.linalg.norm(err_position) > 0.005:
     reference_theta = wrapToPi(math.atan2(err_position[1], err_position[0]))
   else:
     reference_theta = reference.theta
@@ -77,7 +77,6 @@ def pose_control(current, reference):
   if abs(err_theta) < 0.05:
     cmd_msg.linear.x = cmd_position[0]
     cmd_msg.linear.y = cmd_position[1]
-    cmd_msg.angular.z = 0
   else:
     cmd_msg.linear.x = 0
     cmd_msg.linear.y = 0
