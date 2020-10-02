@@ -46,8 +46,8 @@ catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/opt/ros/kinetic/lib/li
 source devel/setup.bash
 roslaunch alan sim.launch
 ```
-<img src="images/screenshot.png">
-<img src="images/screenshot_rviz.png">
+<img src="docs/images/screenshot.png">
+<img src="docs/images/screenshot_rviz.png">
 
 ## Example Tasks
 
@@ -65,7 +65,7 @@ roslaunch alan ee_pose_control.launch ee_x:=1.0 ee_y:=1.0 ee_z:=0.7
 
 where [`ee_x`, `ee_y`, `ee_z`] is the desired end-effector position.
 
-<img src="images/ee_pose_task.png" >
+<img src="docs/images/ee_pose_task.png" >
 
 ### 2 - Pick and Place of an object
 Launch Gazebo by running:
@@ -89,4 +89,4 @@ The launch file has the following arguments:
 - `object_y`: Position of the object - Y coordinate [default 0.0]
 - `object_theta`: Yaw of the object [default 0]
 
-
+<img src="docs/images/pick_place.png" >
