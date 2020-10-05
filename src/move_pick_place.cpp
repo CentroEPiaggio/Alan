@@ -164,6 +164,8 @@ int main(int argc, char** argv) {
   sm_target.base = base_des_pose;
   sm_target.arm_ee_pick = compute_arm_ee_pick_grasp(object_pose, base_des_pose,
                                                     grip_closure);
+                                                    
+  // Orientation of the object frame with respect the mobile base frame                                                  
   Eigen::Quaterniond place_orientation;
   place_orientation = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()) *
                       Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ());
