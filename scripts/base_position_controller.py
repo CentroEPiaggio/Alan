@@ -92,7 +92,7 @@ def is_goal_reached(current, reference):
   
   rospy.logdebug("err_position {}".format(np.linalg.norm(err_position)))
   rospy.logdebug("err_theta {}".format(abs(err_theta)))
-  if np.linalg.norm(err_position) > 0.005 or abs(err_theta) > 0.005:
+  if np.linalg.norm(err_position) > 0.005 or abs(err_theta) > 0.05:
     return False
   return True
 
