@@ -22,11 +22,12 @@
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model alan" />
 
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <rosparam file="$(find panda_simulation)/config/panda_control.yaml" command="load" />
+  <rosparam file="$(find alan)/config/panda_control.yaml" command="load" />
 
 
   <!-- load the controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="joint_state_controller panda_arm_controller" />
+  <!--<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="joint_state_controller panda_arm_controller" />-->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="joint_state_controller joint_velocity_controller" />
   <node if="$(arg load_gripper)" name="controller_spawner_hand" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="panda_hand_controller" />
 
 
