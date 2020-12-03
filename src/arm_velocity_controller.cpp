@@ -6,6 +6,7 @@
 
 #include <vector>
 
+
 namespace alan {
 
 class JointVelocityController : public controller_interface::Controller<hardware_interface::PositionJointInterface> {
@@ -41,10 +42,19 @@ class JointVelocityController : public controller_interface::Controller<hardware
     double t_cur = ros::Time::now().toSec();
     static std::vector<double> prev_position_commanded(7);
     static bool ok = true;
+
+    static std::vector<double> joint_lower_limits{-2.8973, -1.7628, -2.8973, -3.0718, -2.8973,-0.0175, -2.8973}; 
+    static std::vector<double> joint_upper_limits{2.8973, 1.7628, 2.8973, 0.0698, 2.8973, 3.7525, 2.8973};
+
     for (size_t i = 0; i < joint_handles_.size(); i++) {
       if (ok)
         prev_position_commanded[i] = joint_handles_.at(i).getPosition();
+      
       double position_command = prev_position_commanded[i] + command_.at(i)*(t_cur - t_prev);
+      if (position_command > joint_upper_limits[i])
+         position_command = joint_upper_limits[i];
+      if (position_command < joint_lower_limits[i])
+         position_command = joint_lower_limits[i];
       double error = position_command - joint_handles_.at(i).getPosition();
       double commanded_effort = error * gains_vec_.at(i);
       ROS_INFO("Joint %d - error %f - effort %f - position %f", i, error, commanded_effort, position_command);
