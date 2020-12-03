@@ -1,0 +1,3 @@
+<library path="lib/libalan_controllers_lib">
+    <class name="alan/JointVelocityController" type="alan::JointVelocityController" base_class_type="controller_interface::ControllerBase" />
+</library>
