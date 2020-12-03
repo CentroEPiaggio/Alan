@@ -9,4 +9,15 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <exec_depend>xacro</exec_depend>
+  <depend>controller_manager</depend>
+  <exec_depend>pluginlib</exec_depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_ros_perception</depend>
+  <depend>moveit_visual_tools</depend>
+  <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
+  <export>
+    <controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
 </package>
