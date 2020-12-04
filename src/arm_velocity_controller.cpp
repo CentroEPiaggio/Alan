@@ -57,7 +57,6 @@ class JointVelocityController : public controller_interface::Controller<hardware
          position_command = joint_lower_limits[i];
       double error = position_command - joint_handles_.at(i).getPosition();
       double commanded_effort = error * gains_vec_.at(i);
-      ROS_INFO("Joint %d - error %f - effort %f - position %f", i, error, commanded_effort, position_command);
       joint_handles_.at(i).setCommand(commanded_effort);
       prev_position_commanded[i] = position_command;
     } 
