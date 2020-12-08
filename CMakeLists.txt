@@ -43,7 +43,7 @@ target_link_libraries(move_pick_place
   ${Boost_LIBRARIES}
 )
 
-add_library(alan_controllers_lib src/arm_velocity_controller.cpp)
+add_library(alan_controllers_lib src/arm_velocity_controller_bis.cpp)
 
 
 install(DIRECTORY robots
