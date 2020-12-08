@@ -5,10 +5,10 @@
             <transmission name="${transmission}">
                 <type>transmission_interface/SimpleTransmission</type>
                 <joint name="${joint}">
-                    <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+                    <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
                 </joint>
                 <actuator name="${motor}">
-                    <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+                    <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
                     <mechanicalReduction>1</mechanicalReduction>
                 </actuator>
             </transmission>
