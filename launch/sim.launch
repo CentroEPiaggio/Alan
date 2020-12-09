@@ -42,7 +42,7 @@
       <arg name="load_gripper" value="$(arg load_gripper)" />
   </include>
   <group if="$(arg gui)">
-      <include file="$(find panda_moveit_config)/launch/moveit_rviz.launch" />
+      <!--<include file="$(find panda_moveit_config)/launch/moveit_rviz.launch" />-->
   </group>
 
   <node name="joint_state_desired_publisher" pkg="topic_tools" type="relay" args="joint_states joint_states_desired" />
