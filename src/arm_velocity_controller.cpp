@@ -6,7 +6,7 @@
 
 #include <array>
 #include <vector>
-
+#include <fstream>
 
 namespace alan {
 
@@ -47,6 +47,7 @@ class JointVelocityController : public controller_interface::Controller<hardware
   void update(const ros::Time &time, const ros::Duration &period) {
     static double t_prev = ros::Time::now().toSec();
     double t_cur = ros::Time::now().toSec();
+    //static std::ofstream file_output("/tmp/q.csv");
 
     static std::array<double,7> joint_lower_limits = {-2.8973, -1.7628, -2.8973, -3.0718, -2.8973,-0.0175, -2.8973}; 
     static std::array<double,7> joint_upper_limits = {2.8973, 1.7628, 2.8973, 0.0698, 2.8973, 3.7525, 2.8973};
@@ -61,7 +62,9 @@ class JointVelocityController : public controller_interface::Controller<hardware
       double commanded_effort = error * gains_vec_.at(i);
       joint_handles_.at(i).setCommand(commanded_effort);
       prev_position_commanded_[i] = position_command;
+      //file_output << position_command << ",";
     } 
+    //file_output << "\n";
     t_prev = t_cur;
   }
 
