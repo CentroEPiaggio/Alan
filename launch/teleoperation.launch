@@ -1,0 +1,4 @@
+<launch>
+  <node name="alan_mpc" pkg="mpc" type="alan_trajectory_control" output="screen">
+  </node>
+</launch>
