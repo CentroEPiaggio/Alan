@@ -1,7 +1,7 @@
 <launch>
   <node name="alan_mpc" pkg="mpc" type="alan_trajectory_control" output="screen">
-     <remap from="/robotnik_base_control/cmd_vel" to="/robot/robotnik_base_control/cmd_vel"/>
-     <remap from="/robotnik_base_control/odom" to="/robot/robotnik_base_control/odom"/>
+     <!--<remap from="/robotnik_base_control/cmd_vel" to="/robot/robotnik_base_control/cmd_vel"/>
+     <remap from="/robotnik_base_control/odom" to="/robot/robotnik_base_control/odom"/>-->
      <remap from="/arm_command" to="/joint_velocity_controller_crosslab/desired_velocity" />
   </node>
 </launch>
