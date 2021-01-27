@@ -40,6 +40,33 @@ rosdep install --from-paths src --ignore-src -y --skip-keys libfranka
 catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/opt/ros/kinetic/lib/libfranka/
 ```
 
+The software has been tested using the following versions of the packages:
+
+```
+robotnik_msgs - commit: cdc594d498bcb484c2847d20397bd4d0a294fc33
+robotnik_sensors - commit: 681482b384f9d5aa8bca1a355f376b0e9270119b
+summit_xl_common - commit: 725f7f127d549a9ed64fa7d829b74628ad0a1040
+summit_xl_sim - commit: 9cf27eed144d7be9c3cf21ab529c5046644ccde6
+panda_simulation - commit: 9b53b0efc4bbdbf21d6d3c250dd06d495e2aae9f
+panda_moveit_config - commit: a145fc96ff906f03c5bf818b32108d0422c2cf3c
+franka_ros - commit: 45df2e90fe9e49162397774080284cf6d4c23abd
+gazebo-pkgs - commit: baf0f033475c3a592efb0862079f3ff8392cadf6
+general-message-pkgs - commit: f0c7a0cc811187cca8e928bc7c5906e463c24945
+```
+
+To change the version of a package, run:
+
+```
+cd <package folder>
+git checkout <commit hash>
+```
+
+For example, to change the version of the `summit_xl_common` package run:
+```
+cd summit_xl_common
+git checkout 725f7f127d549a9ed64fa7d829b74628ad0a1040
+```
+
 ## Running Alan on Gazebo
 
 ```
